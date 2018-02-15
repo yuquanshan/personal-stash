@@ -65,6 +65,7 @@ class Simulator:
 
 
     def run(self):
+        self.logger.setLevel(LEVEL_MAP[self.loglevel])
         self.logger.debug(self.getConfigMsg())
         corelist = range(0, self.cores)
         availableCores = Set(corelist)
@@ -203,14 +204,6 @@ class Simulator:
 
 
     def msToTime(self, ms):
-        """
-        s = str(ms / 3600000)
-        ms = ms % 3600000
-        s = s + ':' + str(ms / 60000)
-        ms = ms % 60000
-        s = s + ':' + str(ms / 1000) + '.' + str(ms % 1000)
-        return s
-        """
         return datetime.datetime.fromtimestamp(
             18000.0 + ms/1000.0).strftime('[%H:%M:%S.%f]')
 
