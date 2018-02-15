@@ -167,7 +167,7 @@ class Simulator:
             # progress the timer
             timer = timer + 1
         self.logger.info("Total run time: " + str(timer) + ' ms.')
-        pass
+        return timer
 
 
     def deriveRunTime(self, mu, sigma):
