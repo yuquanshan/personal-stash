@@ -1,2 +1,9 @@
 *.DS_Store
 *.pyc
+CMakeFiles*
+CMakeCache*
+MakeFile
+cmake_install*
+lib/*
+bin/*
+build
