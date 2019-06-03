@@ -10,3 +10,7 @@ find_library(FOLLY folly)
 add_executable(count_bits count_bits.cpp)
 target_link_libraries(count_bits ${FOLLY})
 install (TARGETS count_bits DESTINATION /usr/local/bin)
+
+add_executable(nest_printer NestPrinter.cpp)
+target_link_libraries(nest_printer ${FOLLY})
+install (TARGETS nest_printer DESTINATION /usr/local/bin)
