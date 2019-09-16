@@ -19,6 +19,11 @@ install (TARGETS nest_printer DESTINATION /usr/local/bin)
 
 find_program(PYTHON "python")
 if (PYTHON)
-  install (CODE "execute_process(COMMAND ${PYTHON} setup.py install --user --install-scripts /usr/local/bin
-                                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)")
+  find_program(ADA "ada")
+  if (NOT ADA)
+    install (CODE "execute_process(COMMAND ${PYTHON} setup.py install --user --install-scripts /usr/local/bin
+                                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)")
+  else()
+    message ("find another program also called ada: ${ADA}, skipping installing ada...")
+  endif()
 endif()
