@@ -16,3 +16,9 @@ install (TARGETS count_bits DESTINATION /usr/local/bin)
 add_executable(nest_printer NestPrinter.cpp)
 target_link_libraries(nest_printer ${FOLLY} ${GFLAGS} ${GLOG})
 install (TARGETS nest_printer DESTINATION /usr/local/bin)
+
+find_program(PYTHON "python")
+if (PYTHON)
+  install (CODE "execute_process(COMMAND ${PYTHON} setup.py install --user --install-scripts /usr/local/bin
+                                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)")
+endif()
