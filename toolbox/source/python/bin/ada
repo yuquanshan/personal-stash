@@ -1,13 +1,6 @@
 #!/usr/bin/python
 
-import ada.ada
-import pkg_resources
+import ada.query_processor
 import sys
 
-if 'show' in sys.argv or 'yourself' in sys.argv:
-    fn = pkg_resources.resource_filename('ada', 'data/ada.dat')
-    fi = open(fn, 'r')
-    lines = fi.readlines()
-    print(''.join(lines))
-else:    
-    ada.ada.main()
+ada.query_processor.process_query(sys.argv[1:])
