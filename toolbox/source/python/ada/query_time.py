@@ -76,6 +76,7 @@ def parse_date(date_str):
 def nth_weekday(n, weekday, start_date):
     start_weekday = start_date.weekday()
     curr_month = start_date.month
+    oldn = n
     if start_weekday > weekday:
         skip_to = 7 + weekday - start_weekday
     else:
@@ -85,7 +86,7 @@ def nth_weekday(n, weekday, start_date):
         ret = ret + datetime.timedelta(days = 7)
         n = n - 1
     if curr_month != ret.month:
-        print(' '.join([NTH2[n], WEEKDAY[weekday], "doesn't exist in ", start_date.strftime('%b %Y')]))
+        print(' '.join([NTH2[oldn], WEEKDAY[weekday], "doesn't exist in ", start_date.strftime('%b %Y')]))
         exit(1)
     else:
         return ret
