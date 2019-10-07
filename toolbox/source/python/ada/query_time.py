@@ -1,6 +1,7 @@
 import datetime, re, sys
 
 WEEKDAY = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+MONTH = ['jan', 'feb', 'mat', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 DATE_KEYWORDS = ['yes', 'tod', 'tom']
 DATE_FORMAT = "[0-9]+(-[0-9]+)*"
 NTH = ['first', 'second', 'third', 'forth', 'fifth']
