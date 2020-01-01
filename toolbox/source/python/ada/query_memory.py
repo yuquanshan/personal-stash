@@ -95,6 +95,7 @@ def peek(config, *args):
         with open(os.path.expanduser('~/.adaconfig/.memory'), 'r') as fp:
             pattern = ".*{}.*".format(args[0])
             lines = json.load(fp)
+            lines = [l + '\n' for l in lines]
             print_match(lines, pattern)
 
 
