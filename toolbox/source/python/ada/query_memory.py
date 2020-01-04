@@ -6,17 +6,19 @@ import re
 
 '''
 let ada remember either a file, a string and peek the remembered content
-for peek, ada will print 5 lines above 10 lines below
+for peek, ada will print LINE_BUFFER_SIZE lines above N_MORE_LINES_TO_PRINT lines below
 around the regex keyword (case insensitive);
 if no keyword provided, ada will show all the content
 string memory is a FIFO queue whose capacity is _mem_cap defined in config
 '''
 GREEN_CODE = "\033[0;32m"
+RED_CODE = "\033[0;31m"
 RESET_CODE = "\033[0;0m"
 
 START_LINE = ">>>>>>>>>>>>>>>>>>>>>>>>>>"
 END_LINE = "<<<<<<<<<<<<<<<<<<<<<<<<<<"
 
+LINE_BUFFER_SIZE = 10
 N_MORE_LINES_TO_PRINT = 10
 
 def process_memory(*args):
@@ -82,18 +84,22 @@ def peek(config, *args):
                     print(l)
     # case 2 or 3
     elif args[0] in config or os.path.exists(os.path.expanduser(args[0])):
+        # case 2
         if len(args) == 1:
             with open(config[args[0]] if args[0] in config else os.path.expanduser(args[0]), 'r') as fp:
                 print(fp.read(), end="")
+        # case 3
         else:
             with open(config[args[0]] if args[0] in config else os.path.expanduser(args[0]), 'r') as fp:
-                pattern = ".*{}.*".format(args[1])
+                pattern = ".*{}.*".format(args[1]).lower()
+                print(RED_CODE + "SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
                 lines = fp.readlines()
                 print_match(lines, pattern)
     # case 4
     else:
         with open(os.path.expanduser('~/.adaconfig/.memory'), 'r') as fp:
-            pattern = ".*{}.*".format(args[0])
+            pattern = ".*{}.*".format(args[0]).lower()
+            print(RED_CODE + "SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
             lines = json.load(fp)
             lines = [l + '\n' for l in lines]
             print_match(lines, pattern)
@@ -140,10 +146,10 @@ def print_match(lines, pattern):
                 for i in line_buffer:
                     print(i, end="")
                 print(END_LINE + "(line: {})".format(line_count))
-                line_buffer = line_buffer[-5:]
+                line_buffer = line_buffer[-LINE_BUFFER_SIZE:]
                 match_in_buffer = False
         else:
-            if len(line_buffer) == 5:
+            if len(line_buffer) == LINE_BUFFER_SIZE:
                 line_buffer.pop(0)
             line_buffer.append(l)
     if match_in_buffer:
