@@ -114,7 +114,7 @@ def remember(config, s):
                 f.seek(0)
                 lines = json.load(f)
         if len(lines) >= config['_mem_cap']:
-            lines = lines[len(lines) - config['_mem_cap'] + 1]
+            lines = lines[len(lines) - config['_mem_cap'] + 1:]
     lines.append(s)
     with open(os.path.expanduser('~/.adaconfig/.memory'), 'w') as f:
         json.dump(lines, f)
