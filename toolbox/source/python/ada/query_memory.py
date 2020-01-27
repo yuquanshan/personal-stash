@@ -1,15 +1,21 @@
 from __future__ import print_function
 
+import calendar
+import hashlib
 import json
 import os
 import re
+import sets
+import time
 
 '''
 let ada remember either a file, a string and peek the remembered content
 for peek, ada will print LINE_BUFFER_SIZE lines above N_MORE_LINES_TO_PRINT lines below
 around the regex keyword (case insensitive);
 if no keyword provided, ada will show all the content
-string memory is a FIFO queue whose capacity is _mem_cap defined in config
+
+layout of config:
+{file_alias0: file_path0, file_alias1: file_path1, ...}
 '''
 GREEN_CODE = "\033[0;32m"
 RED_CODE = "\033[0;31m"
@@ -21,20 +27,27 @@ END_LINE = "<<<<<<<<<<<<<<<<<<<<<<<<<<"
 LINE_BUFFER_SIZE = 10
 N_MORE_LINES_TO_PRINT = 10
 
+# default TTL is 15 days
+DEFAULT_TTL = 15
+DAY_SECONDS = 3600 * 24
+
+CONFIG_PATH = os.path.expanduser('~/.adaconfig/.config')
+MEMORY_PATH = os.path.expanduser('~/.adaconfig/.memory')
+
 def process_memory(*args):
     try:
         # check if the config dir exists
-        if os.path.exists(os.path.expanduser('~/.adaconfig/.config')):
+        if os.path.exists(CONFIG_PATH):
             # load config json
-            fp = open(os.path.expanduser('~/.adaconfig/.config'), 'r')
+            fp = open(CONFIG_PATH, 'r')
             config = json.load(fp)
             fp.close()
         else:
             os.makedirs(os.path.expanduser('~/.adaconfig'))
-            fp = open(os.path.expanduser('~/.adaconfig/.memory'), 'w')
+            fp = open(MEMORY_PATH, 'w')
             fp.close()
             # initilize the config json
-            config = {"_mem_cap": 5}
+            config = {"_memory": MEMORY_PATH}
 
         if 'peek' in args:
             idx = args.index('peek')
@@ -44,7 +57,10 @@ def process_memory(*args):
             if idx >= len(args) - 1:
                 print('remember what?')
                 return
-            remember(config, args[idx + 1])
+            if idx == len(args) - 2:
+                remember(config, args[idx + 1])
+            else:
+                remember(config, args[idx + 1], int(args[-1]))
         elif 'register' in args:
             idx = args.index('register')
             if idx + 2 > len(args) - 1:
@@ -56,12 +72,19 @@ def process_memory(*args):
             if idx >= len(args) - 1:
                 print('forget what?')
                 return
-            config.pop(args[idx + 1], None)
+            if args[idx + 1] in config:
+                config.pop(args[idx + 1], None)
+            else:
+                # try deleting hash in _memory
+                for hash in args[idx + 1:]:
+                    forget(config, hash)
+        elif 'config' in args:
+            print(config)
         else:
             print("I don't understand the input" + ' '.join(args))
             return
         # flush the config, return
-        fp = open(os.path.expanduser('~/.adaconfig/.config'), 'w')
+        fp = open(CONFIG_PATH, 'w')
         json.dump(config, fp)
     except Exception as e:
         print(e)
@@ -77,11 +100,24 @@ args can be:
 def peek(config, *args):
     # case 1
     if len(args) == 0:
-        if os.path.exists(os.path.expanduser(os.path.expanduser('~/.adaconfig/.memory'))):
-            with open(os.path.expanduser('~/.adaconfig/.memory'), 'r') as fp:
-                lines = json.load(fp)
-                for l in lines:
-                    print(l)
+        if os.path.exists(config['_memory']):
+            with open(config['_memory'], 'r') as fp:
+                entries = json.load(fp)
+            MEMFORMAT = GREEN_CODE + "[{} {}] " + RESET_CODE + "{} " + RED_CODE + "(expires in {} hrs)" + RESET_CODE
+            for entry in entries:
+                if isinstance(entry, unicode):
+                    print(MEMFORMAT.format("UNKNOWN", entry, "UNKNOWN"))
+                else:
+                    ts = time.localtime(entry[0])
+                    time_str = "{}-{}-{} {}:{}:{}".format(
+                        ts.tm_year,
+                        str(ts.tm_mon).rjust(2, '0'),
+                        str(ts.tm_mday).rjust(2, '0'),
+                        str(ts.tm_hour).rjust(2, '0'),
+                        str(ts.tm_min).rjust(2, '0'),
+                        str(ts.tm_sec).rjust(2, '0'))
+                    now = calendar.timegm(time.gmtime())
+                    print(MEMFORMAT.format(time_str, entry[2], entry[1], "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
     # case 2 or 3
     elif args[0] in config or os.path.exists(os.path.expanduser(args[0])):
         # case 2
@@ -97,27 +133,84 @@ def peek(config, *args):
                 print_match(lines, pattern)
     # case 4
     else:
-        with open(os.path.expanduser('~/.adaconfig/.memory'), 'r') as fp:
+        with open(config['_memory'], 'r') as fp:
             pattern = ".*{}.*".format(args[0]).lower()
             print(RED_CODE + "SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
-            lines = json.load(fp)
-            lines = [l + '\n' for l in lines]
-            print_match(lines, pattern)
+            entries = json.load(fp)
+        lines = []
+        for entry in entries:
+            if isinstance(entry, unicode):
+                lines.append(entry + '\n')
+            else:
+                lines.append(entry[1] + '\n')
+        print_match(lines, pattern)
 
 
-def remember(config, s):
-    config["_memory"] = os.path.expanduser('~/.adaconfig/.memory')
-    lines = []
-    if os.path.exists(os.path.expanduser('~/.adaconfig/.memory')):
-        with open(os.path.expanduser('~/.adaconfig/.memory'), 'r') as f:
+def remember(config, s, ttl = DEFAULT_TTL):
+    entries = []
+    if os.path.exists(config['_memory']):
+        with open(config['_memory'], 'r') as f:
             if len(f.read()) > 0:
                 f.seek(0)
-                lines = json.load(f)
-        if len(lines) >= config['_mem_cap']:
-            lines = lines[len(lines) - config['_mem_cap'] + 1:]
-    lines.append(s)
-    with open(os.path.expanduser('~/.adaconfig/.memory'), 'w') as f:
-        json.dump(lines, f)
+                entries = json.load(f)
+    now = calendar.timegm(time.gmtime())
+    buffered_entries = []
+    hash = hashlib.sha224(s).hexdigest()[:6]
+    hash_set = sets.Set()
+    for entry in entries:
+        '''
+        backward compatibility: the original entries just a list of unicodes
+        but in the newest design, i want to make it a list of [ts, str,
+        hash(str), ttl (days)] tuples. so if the old format is detected,
+        replace it with the new format with default values filled
+        '''
+        if isinstance(entry, unicode):
+            h = hashlib.sha224(entry).hexdigest()[:6]
+            hash_set.add(h)
+            if hash in hash_set:
+                print("WARNING: hash collides with an exising content, replace it with the new one")
+                continue
+            buffered_entries.append([now, entry, h, DEFAULT_TTL])
+        else:
+            tdelta = now - entry[0]
+            if tdelta > entry[3] * DAY_SECONDS:
+                # ttl passed, forget this entry
+                continue
+            else:
+                hash_set.add(entry[2])
+                if hash in hash_set:
+                    print("WARNING: hash collides with an exising content, replace it with the new one")
+                    continue
+                buffered_entries.append(entry)
+    buffered_entries.append([now, s, hash, ttl])
+    with open(config['_memory'], 'w') as f:
+        json.dump(buffered_entries, f)
+
+
+# forget a _memory entry in hash
+def forget(config, hash):
+    entries = []
+    if os.path.exists(config['_memory']):
+        with open(config['_memory'], 'r') as f:
+            if len(f.read()) > 0:
+                f.seek(0)
+                entries = json.load(f)
+    buffered_entries = []
+    for entry in entries:
+        ety = entry
+        if isinstance(entry, unicode):
+            now = calendar.timegm(time.gmtime())
+            h = hashlib.sha224(entry).hexdigest()[:6]
+            ety = [now, entry, h, DEFAULT_TTL]
+        else:
+            ety = entry
+        if ety[2] == hash:
+            # if hash matches, forget by not adding to buffered_entries
+            continue
+        else:
+            buffered_entries.append(ety)
+    with open(config['_memory'], 'w') as f:
+        json.dump(buffered_entries, f)
 
 
 def register(config, alias, fp):
