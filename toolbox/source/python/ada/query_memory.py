@@ -106,7 +106,7 @@ def peek(config, *args):
             MEMFORMAT = GREEN_CODE + "[{} {}] " + RESET_CODE + "{} " + RED_CODE + "(expires in {} hrs)" + RESET_CODE
             for entry in entries:
                 if isinstance(entry, unicode):
-                    print(MEMFORMAT.format("UNKNOWN", entry, "UNKNOWN"))
+                    print(MEMFORMAT.format("UNKNOWN", "UNKNOWN", entry, "UNKNOWN"))
                 else:
                     ts = time.localtime(entry[0])
                     time_str = "{}-{}-{} {}:{}:{}".format(
