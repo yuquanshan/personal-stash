@@ -103,7 +103,7 @@ def peek(config, *args):
         if os.path.exists(config['_memory']):
             with open(config['_memory'], 'r') as fp:
                 entries = json.load(fp)
-            MEMFORMAT = GREEN_CODE + "[{} {}] " + RESET_CODE + "{} " + RED_CODE + "(expires in {} hrs)" + RESET_CODE
+            MEMFORMAT = unicode(GREEN_CODE + "[{} {}] " + RESET_CODE + "{} " + RED_CODE + "(expires in {} hrs)" + RESET_CODE)
             for entry in entries:
                 if isinstance(entry, unicode):
                     print(MEMFORMAT.format("UNKNOWN", "UNKNOWN", entry, "UNKNOWN"))
