@@ -117,7 +117,8 @@ def peek(config, *args):
                         str(ts.tm_min).rjust(2, '0'),
                         str(ts.tm_sec).rjust(2, '0'))
                     now = calendar.timegm(time.gmtime())
-                    print(MEMFORMAT.format(time_str, entry[2], entry[1], "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
+                    if entry[3] * DAY_SECONDS - (now - entry[0]) > 0:
+                        print(MEMFORMAT.format(time_str, entry[2], entry[1], "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
     # case 2 or 3
     elif args[0] in config or os.path.exists(os.path.expanduser(args[0])):
         # case 2
