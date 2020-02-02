@@ -17,9 +17,9 @@ if no keyword provided, ada will show all the content
 layout of config:
 {file_alias0: file_path0, file_alias1: file_path1, ...}
 '''
-GREEN_CODE = "\033[0;32m"
-RED_CODE = "\033[0;31m"
-RESET_CODE = "\033[0;0m"
+GREEN_CODE = u"\033[0;32m"
+RED_CODE = u"\033[0;31m"
+RESET_CODE = u"\033[0;0m"
 
 START_LINE = ">>>>>>>>>>>>>>>>>>>>>>>>>>"
 END_LINE = "<<<<<<<<<<<<<<<<<<<<<<<<<<"
@@ -128,15 +128,15 @@ def peek(config, *args):
         # case 3
         else:
             with open(config[args[0]] if args[0] in config else os.path.expanduser(args[0]), 'r') as fp:
-                pattern = ".*{}.*".format(args[1]).lower()
-                print(RED_CODE + "SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
+                pattern = u".*{}.*".format(args[1].decode('utf8')).lower()
+                print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
                 lines = fp.readlines()
                 print_match(lines, pattern)
     # case 4
     else:
         with open(config['_memory'], 'r') as fp:
-            pattern = ".*{}.*".format(args[0]).lower()
-            print(RED_CODE + "SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
+            pattern = u".*{}.*".format(args[0].decode('utf8')).lower()
+            print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
             entries = json.load(fp)
         lines = []
         for entry in entries:
@@ -239,7 +239,7 @@ def print_match(lines, pattern):
                 print(START_LINE)
                 for i in line_buffer:
                     print(i, end="")
-                print(END_LINE + "(line: {})".format(line_count))
+                print(END_LINE + u"(line: {})".format(line_count))
                 line_buffer = line_buffer[-LINE_BUFFER_SIZE:]
                 match_in_buffer = False
         else:
@@ -250,4 +250,4 @@ def print_match(lines, pattern):
         print(START_LINE)
         for i in line_buffer:
             print(i, end="")
-        print(END_LINE + "(line: {})".format(line_count))
+        print(END_LINE + u"(line: {})".format(line_count))
