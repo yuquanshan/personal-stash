@@ -227,6 +227,7 @@ def print_match(lines, pattern):
     line_count = 0
     for l in lines:
         line_count = line_count + 1
+        l = l.decode('utf8')
         match = re.match(pattern, l.lower())
         if match:
             match_in_buffer = True
