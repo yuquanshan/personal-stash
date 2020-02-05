@@ -1,4 +1,5 @@
 from __future__ import print_function
+# -*- coding: utf-8 -*-
 
 import calendar
 import hashlib
@@ -93,8 +94,8 @@ def process_memory(*args):
 '''
 args can be:
 1. <empty>: showing all memory
-2. [<alias/file>]: showing all content in alias/file
-3. [<alias/file> <regex>]: showing the adjacent lines around regex matches
+2. [<alias/file/dir>]: showing all content in alias/file/dir
+3. [<alias/file/dir> <regex>]: showing the adjacent lines around regex matches
 4. [<regex>]: showing all memory that matches regex
 '''
 def peek(config, *args):
@@ -120,18 +121,58 @@ def peek(config, *args):
                     if entry[3] * DAY_SECONDS - (now - entry[0]) > 0:
                         print(MEMFORMAT.format(time_str, entry[2], entry[1], "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
     # case 2 or 3
+    # TODO(yuquanshan): refactor code to two functions: _process_file and _process_dir
     elif args[0] in config or os.path.exists(os.path.expanduser(args[0])):
         # case 2
+        good = False
         if len(args) == 1:
-            with open(config[args[0]] if args[0] in config else os.path.expanduser(args[0]), 'r') as fp:
-                print(fp.read(), end="")
+            if args[0] in config:
+                with open(config[args[0]], 'r') as fp:
+                    print(fp.read(), end="")
+                    good = True
+            else:
+                path = os.path.expanduser(args[0])
+                if os.path.exists(path):
+                    if os.path.isfile(path):
+                        with open(path, 'r') as fp:
+                           print(fp.read(), end="")
+                        good = True
+                    elif os.path.isdir(path):
+                        file_paths = [os.path.join(path, p) for p in os.listdir(path) if os.path.isfile(os.path.join(path, p))]
+                        for p in file_paths:
+                            print(RED_CODE + "<{}>".format(p)+ RESET_CODE)
+                            with open(p, 'r') as fp:
+                                print(fp.read(), end="")
+                        good = True
+            if not good:
+                print("ERROR:" + str(args[0]) + "is neither a registered alias nor a valid path to a file or dir")
         # case 3
         else:
-            with open(config[args[0]] if args[0] in config else os.path.expanduser(args[0]), 'r') as fp:
-                pattern = u".*{}.*".format(args[1].decode('utf8')).lower()
-                print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
-                lines = fp.readlines()
-                print_match(lines, pattern)
+            pattern = u".*{}.*".format(args[1].decode('utf8')).lower()
+            print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
+            if args[0] in config:
+                with open(config[args[0]], 'r'):
+                    lines = fp.readlines()
+                    print_match(lines, pattern)
+                    good = True
+            else:
+                path = os.path.expanduser(args[0])
+                if os.path.exists(path):
+                    if os.path.isfile(path):
+                        with open(path, 'r') as fp:
+                            lines = fp.readlines()
+                            print_match(lines, pattern)
+                            good = True
+                    elif os.path.isdir(path):
+                        file_paths = [os.path.join(path, p) for p in os.listdir(path) if os.path.isfile(os.path.join(path, p))]
+                        for p in file_paths:
+                            print(RED_CODE + "<{}>".format(p)+ RESET_CODE)
+                            with open(p, 'r') as fp:
+                                lines = fp.readlines()
+                                print_match(lines, pattern)
+                                good = True
+            if not good:
+                print("ERROR:" + str(args[0]) + "is neither a registered alias nor a valid path to a file or dir")
     # case 4
     else:
         with open(config['_memory'], 'r') as fp:
