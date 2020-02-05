@@ -151,7 +151,7 @@ def peek(config, *args):
             pattern = u".*{}.*".format(args[1].decode('utf8')).lower()
             print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
             if args[0] in config:
-                with open(config[args[0]], 'r'):
+                with open(config[args[0]], 'r') as fp:
                     lines = fp.readlines()
                     print_match(lines, pattern)
                     good = True
