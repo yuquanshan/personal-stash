@@ -1,0 +1,42 @@
+ada
+
+DESCRIPTION
+    Ada is a collection of tools, including date, python-syntax expresssion
+evaluator, and more to be added in the future. The name "ada" is a shortened
+version of "ask date" because it was originally designed to answer
+datetime-related questions, such as "the date of next next next Tuesday",
+"what is the date 10 days before", etc.
+
+SYNOPSIS
+    ada [Option] [...]
+
+OPTIONS
+    <null>: date-related queries
+        <YYYY-MM-DD>/<MM-DD>   -   day of week of <YYYY-MM-DD>
+        "[first|second|...|1st|2nd|...]" "[mon|tue|...]" [<YYYY>/<YYYY-MM>]   -
+            nth (up to 5) weekday in <YYYY> or <YYYY-MM>
+        <N> "[after|before|later|earlier]" [<YYYY>|<YYYY-MM>|<YYYY-MM-DD>]  -
+            the date of <N> days after/before/later/earlier <YYYY-MM-DD>
+        "([next|last]).*" "[mon|tue|...]"   -   date of next * N last * N
+            week of day 
+        "[yes|tom|tod]"   -   date of yesterdat/tomorrow/today
+
+    show: show something
+        calendar [YYYY] [MM] ["[jan|feb|mat|...]"]   -   show calendar of a month
+
+    remember: remember a message
+        <msg> [ttl]   -   message with ttl (days), if ttl unset, ttl = 15 days
+
+    forget: forget a message by hash
+        <hash>   -   ada will forget the message associated with the hash
+
+    register: register a file
+        <alias> <file_path>   -   register a file path with alias
+
+    peek: peek content in memory
+        [regex]   -   show all "remember"ed that are greped by regex,
+            if regex is not given, show all
+        <alias>/<file>/<dir> [regex]   -   show all content that are greped by
+            regex, if regex is not given, show all
+
+    help: show this help message

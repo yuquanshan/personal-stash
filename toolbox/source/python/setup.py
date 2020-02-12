@@ -7,6 +7,6 @@ setup(name='ada',
       description='Ada: the script that can answer questions regarding date',
       author='yuquanshan',
       packages = ['ada'],
-      package_data={'ada': ['data/*.dat']},
+      package_data={'ada': ['data/*.dat', 'data/*.txt']},
       scripts=['bin/ada']
      )

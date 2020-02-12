@@ -9,6 +9,9 @@ def process_show(*args):
     if 'yourself' in args:
         file_path = os.path.join(this_dir, 'data', 'ada.dat')
         print open(file_path, 'r').read()
+    if 'help' in args:
+        file_path = os.path.join(this_dir, 'data', 'help.txt')
+        print open(file_path, 'r').read()
     elif 'calendar' in args:
         ym = getYearMonth(args)
         print_calendar(datetime.date(ym[0], ym[1], 1))

@@ -10,5 +10,7 @@ def process_query(args):
         query_show.process_show(*args[args.index('show')+1:])
     elif 'peek' in args or 'remember' in args or 'register' in args or 'forget' in args or 'config' in args:
         query_memory.process_memory(*args)
+    elif "help" in args or "--help" in args:
+        query_show.process_show("help")
     else:
         query_time.process_time_query(*args)

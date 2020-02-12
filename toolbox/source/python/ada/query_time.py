@@ -10,6 +10,7 @@ NTH2 = ['1st', '2nd', '3rd', '4th', '5th']
 class DontGetDateHint(Exception):
     pass
 
+
 def process_time_query(*args):
     if len(args) == 0:
         print "No time specified"
@@ -21,13 +22,20 @@ def process_time_query(*args):
                 date = parse_date(args[-1])
             elif len(args) >= 3:
                 start_date = parse_date(args[-1])
-                start_date = datetime.date(start_date.year, start_date.month, 1)
-                if args[0] in NTH:
-                    n = NTH.index(args[0])
+                if args[0] in NTH + NTH2:
+                    if args[0] in NTH:
+                        n = NTH.index(args[0])
+                    else:
+                        n = NTH2.index(args[0])
+                    start_date = datetime.date(start_date.year, start_date.month, 1)
+                    weekday = WEEKDAY.index(args[1][0:3])
+                    date = nth_weekday(n, weekday, start_date)
+                elif args[-2] in ['after', 'later']:
+                    date = process_day_delta(int(args[0]), start_date)
+                elif args[-2] in ['before', 'earlier']:
+                    date = process_day_delta(-1 * int(args[0]), start_date)
                 else:
-                    n = NTH2.index(args[0])
-                weekday = WEEKDAY.index(args[1][0:3])
-                date = nth_weekday(n, weekday, start_date)
+                    raise DontGetDateHint
             else:
                 raise DontGetDateHint
         elif args[-1] in ['after', 'later']:
@@ -47,6 +55,7 @@ def process_time_query(*args):
         print("I don't get those hints: " + ' '.join(args))
         sys.exit(1)
     print_date(date)
+
 
 def parse_date(date_str):
     ymd = date_str.split('-')
@@ -74,6 +83,7 @@ def parse_date(date_str):
     else:
         raise DontGetDateHint
 
+
 def nth_weekday(n, weekday, start_date):
     start_weekday = start_date.weekday()
     curr_month = start_date.month
@@ -92,15 +102,21 @@ def nth_weekday(n, weekday, start_date):
     else:
         return ret
 
-def process_day_delta(delta):
-    today = datetime.date.today()
-    return today + datetime.timedelta(days=delta)
+
+def process_day_delta(delta, day=datetime.date.today()):
+    return day + datetime.timedelta(days=delta)
+
 
 def process_weekday(*args):
     nextc = args.count('next')
     lastc = args.count('last')
     today = datetime.date.today()
+    if today.weekday() > WEEKDAY.index(args[-1][0:3]) and lastc > 0:
+        lastc = lastc - 1
+    elif today.weekday() < WEEKDAY.index(args[-1][0:3]) and nextc > 0:
+        nextc = nextc - 1
     return today - datetime.timedelta(days = (lastc - nextc) * 7 + today.weekday() - WEEKDAY.index(args[-1][0:3]))
+
 
 def print_date(date):
     print(date.strftime('%Y-%m-%d %A'))
