@@ -18,7 +18,7 @@ OPTIONS
         <N> "[after|before|later|earlier]" [<YYYY>|<YYYY-MM>|<YYYY-MM-DD>]  -
             the date of <N> days after/before/later/earlier <YYYY-MM-DD>
         "([next|last]).*" "[mon|tue|...]"   -   date of next * N last * N
-            week of day 
+            week of day
         "[yes|tom|tod]"   -   date of yesterdat/tomorrow/today
 
     show: show something
@@ -38,5 +38,9 @@ OPTIONS
             if regex is not given, show all
         <alias>/<file>/<dir> [regex]   -   show all content that are greped by
             regex, if regex is not given, show all
+    amend: amend an existing entry
+        <hash> <new_content>
+    append: append to an existing entry
+        <hash> <content_to_append>
 
     help: show this help message

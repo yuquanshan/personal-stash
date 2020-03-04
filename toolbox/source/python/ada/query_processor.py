@@ -8,7 +8,7 @@ def process_query(args):
         print(query_calc.eval_expr(*args[args.index('calc')+1:]))
     elif 'show' in args:
         query_show.process_show(*args[args.index('show')+1:])
-    elif 'peek' in args or 'remember' in args or 'register' in args or 'forget' in args or 'config' in args:
+    elif 'peek' in args or 'remember' in args or 'register' in args or 'forget' in args or 'config' in args or 'amend' in args or 'append' in args:
         query_memory.process_memory(*args)
     elif "help" in args or "--help" in args:
         query_show.process_show("help")

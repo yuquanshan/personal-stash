@@ -81,6 +81,31 @@ def process_memory(*args):
                     forget(config, hash)
         elif 'config' in args:
             print(config)
+        elif 'amend' in args:
+            idx = args.index('amend')
+            if len(args) - 1 < idx + 2:
+                print('to amend, specify <hash> <new_content>')
+            else:
+                hash = args[idx + 1]
+                new_content = ' '.join(args[idx + 2:])
+                ret = forget(config, hash)
+                if ret[1] <= 0:
+                    print("hash not found, create new entry")
+                    remember(config, new_content)
+                else:
+                    remember(config, new_content, ret[1], ret[0])
+        elif 'append' in args:
+            idx = args.index('append')
+            if len(args) - 1 < idx + 2:
+                print('to amend, specify <hash> <content_to_append>')
+            else:
+                hash = args[idx + 1]
+                new_content = ' '.join(args[idx + 2:])
+                ret = forget(config, hash)
+                if ret[1] <= 0:
+                    print("hash not found, append to nothing")
+                else:
+                    remember(config, ret[-1] + new_content, ret[1], ret[0])
         else:
             print("I don't understand the input" + ' '.join(args))
             return
@@ -188,14 +213,15 @@ def peek(config, *args):
         print_match(lines, pattern)
 
 
-def remember(config, s, ttl = DEFAULT_TTL):
+def remember(config, s, ttl = DEFAULT_TTL, ts = None):
     entries = []
     if os.path.exists(config['_memory']):
         with open(config['_memory'], 'r') as f:
             if len(f.read()) > 0:
                 f.seek(0)
                 entries = json.load(f)
-    now = calendar.timegm(time.gmtime())
+    if not ts:
+        ts = calendar.timegm(time.gmtime())
     buffered_entries = []
     hash = hashlib.sha224(s).hexdigest()[:6]
     hash_set = sets.Set()
@@ -212,9 +238,9 @@ def remember(config, s, ttl = DEFAULT_TTL):
             if hash in hash_set:
                 print("WARNING: hash collides with an exising content, replace it with the new one")
                 continue
-            buffered_entries.append([now, entry, h, DEFAULT_TTL])
+            buffered_entries.append([ts, entry, h, DEFAULT_TTL])
         else:
-            tdelta = now - entry[0]
+            tdelta = ts - entry[0]
             if tdelta > entry[3] * DAY_SECONDS:
                 # ttl passed, forget this entry
                 continue
@@ -224,14 +250,16 @@ def remember(config, s, ttl = DEFAULT_TTL):
                     print("WARNING: hash collides with an exising content, replace it with the new one")
                     continue
                 buffered_entries.append(entry)
-    buffered_entries.append([now, s, hash, ttl])
+    buffered_entries.append([ts, s, hash, ttl])
     with open(config['_memory'], 'w') as f:
         json.dump(buffered_entries, f)
 
 
-# forget a _memory entry in hash
+# forget a _memory entry in hash, return [ts, ttl, original_content] ,
+# if ttl <= 0, then either the entry is expired or non-existing
 def forget(config, hash):
     entries = []
+    ret = [0, 0, '']
     if os.path.exists(config['_memory']):
         with open(config['_memory'], 'r') as f:
             if len(f.read()) > 0:
@@ -248,11 +276,13 @@ def forget(config, hash):
             ety = entry
         if ety[2] == hash:
             # if hash matches, forget by not adding to buffered_entries
+            ret = [ety[0], ety[-1], ety[1]]
             continue
         else:
             buffered_entries.append(ety)
     with open(config['_memory'], 'w') as f:
         json.dump(buffered_entries, f)
+    return ret
 
 
 def register(config, alias, fp):
