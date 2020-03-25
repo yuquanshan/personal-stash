@@ -144,7 +144,7 @@ def peek(config, *args):
                         str(ts.tm_sec).rjust(2, '0'))
                     now = calendar.timegm(time.gmtime())
                     if entry[3] * DAY_SECONDS - (now - entry[0]) > 0:
-                        print(MEMFORMAT.format(time_str, entry[2], entry[1], "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
+                        print(MEMFORMAT.format(time_str, entry[2], transformBulletsView(entry[1]), "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
     # case 2 or 3
     # TODO(yuquanshan): refactor code to two functions: _process_file and _process_dir
     elif args[0] in config or os.path.exists(os.path.expanduser(args[0])):
@@ -323,3 +323,13 @@ def print_match(lines, pattern):
         for i in line_buffer:
             print(i, end="")
         print(END_LINE + u"(line: {})".format(line_count))
+
+
+def transformBulletsView(s):
+    l = re.compile("[0-9]+\. ").split(s)
+    for i in range(1, len(l)):
+        l[i] = u"\n   \u2022 " + l[i]
+    if len(l) > 1:
+        l[0] = '\n' + l[0]
+        l[-1] = l[-1] + '\n'
+    return ''.join(l)
