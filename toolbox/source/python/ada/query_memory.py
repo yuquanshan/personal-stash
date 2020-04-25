@@ -8,6 +8,7 @@ import os
 import re
 import sets
 import time
+import txt_editor
 
 '''
 let ada remember either a file, a string and peek the remembered content
