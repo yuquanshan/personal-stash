@@ -11,22 +11,6 @@ UNKNOWN_STR = "[UNKNOW STATE!!!]"
 MOVE_KEYS = [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
 BORDER_LINES = 2
 
-# class Textbox(curses.textpad.Textbox):
-#     def do_command(self, ch):
-#         if ch == 127:
-#             super(curses.textpad.Textbox, self).do_command(4)
-#         else:
-#             super(curses.textpad.Textbox, self).do_command(ch)
-
-
-# heler function to get the code of key
-def keyLookup():
-    stdscr = curses.initscr()
-    stdscr.keypad(True)
-    ch = stdscr.getkey()
-    curses.endwin()
-    print(ch)
-
 
 class TxtEditor:
     def __init__(self, content):
@@ -62,7 +46,6 @@ class TxtEditor:
         c = window.getch()
         if c == ord('i'):
             self.state_ = 2
-            self.yx_ = [BORDER_LINES, 0]
         elif c == ord(':'):
             self.state_ = 1
             self.cmd_buff_ = ":"
@@ -72,7 +55,6 @@ class TxtEditor:
 
 
     def _take_and_process_cmd(self, window):
-        # window.move(BORDER_LINES - 1, len(self.cmd_buff_))
         c = window.getch()
         if c >= 97 and c <= 122:
             self.cmd_buff_ = self.cmd_buff_ + chr(c)
@@ -84,6 +66,10 @@ class TxtEditor:
         elif c == 27: # ESC
             window.clear()
             self._reset_state()
+        elif c == 127:
+            window.clear()
+            self.cmd_buff_ = self.cmd_buff_[:-1]
+            self.yx_ = [BORDER_LINES - 1, len(self.cmd_buff_)]
 
 
     def _take_and_process_insert(self, window):
@@ -92,24 +78,26 @@ class TxtEditor:
         lc[0] = lc[0] - BORDER_LINES
         if c == 27: # ESC
             window.clear()
-            self._reset_state()
+            self._reset_state(False)
         elif c in MOVE_KEYS:
             self._move_cursor(c)
-        elif c == 127:
+        elif c == 127: # delete
             # we delete char with idx lc[1] - 1 of the line
             if lc[1] - 1 >= 0:
                 self.content_[lc[0]] = self.content_[lc[0]][:lc[1] - 1] + self.content_[lc[0]][lc[1]:]
             self._move_cursor(curses.KEY_LEFT)
+            window.clear()
         elif c >= 32 and c <= 126:
             self.content_[lc[0]] = self.content_[lc[0]][:lc[1]] + chr(c) + self.content_[lc[0]][lc[1]:]
             self._move_cursor(curses.KEY_RIGHT)
 
 
-    def _reset_state(self):
+    def _reset_state(self, reset_cursor = True):
         self.state_ = 0
         self.cmd_buff_ = ""
         self.stay_editing_ = True
-        self.yx_ = [BORDER_LINES, 0]
+        if reset_cursor:
+            self.yx_ = [BORDER_LINES, 0]
 
 
     def _move_cursor(self, move):
