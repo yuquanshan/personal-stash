@@ -8,7 +8,7 @@ import os
 import re
 import sets
 import time
-import txt_editor
+from txt_editor import LineFixedTxtEditor
 
 '''
 let ada remember either a file, a string and peek the remembered content
@@ -84,8 +84,17 @@ def process_memory(*args):
             print(config)
         elif 'amend' in args:
             idx = args.index('amend')
-            if len(args) - 1 < idx + 2:
-                print('to amend, specify <hash> <new_content>')
+            if len(args) - 1 < idx + 1:
+                print('to amend, specify <hash> [<new_content>]')
+            elif len(args) - 1 == idx + 1:
+                hash = args[idx + 1]
+                ret = forget(config, hash)
+                if ret[1] <= 0:
+                    print("hash not found, update nothing")
+                else:
+                    editor = LineFixedTxtEditor(100, [ret[2]])
+                    ctt = editor.run()
+                    remember(config, '\n'.join(ctt[0]), ret[1], ret[0])
             else:
                 hash = args[idx + 1]
                 new_content = ' '.join(args[idx + 2:])
