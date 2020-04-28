@@ -25,7 +25,7 @@ OPTIONS
         calendar [YYYY] [MM] ["[jan|feb|mat|...]"]   -   show calendar of a month
 
     remember: remember a message
-        <msg> [ttl]   -   message with ttl (days), if ttl unset, ttl = 15 days
+        [<msg>] [ttl]   -   message with ttl (days), if ttl unset, ttl = 15 days
 
     forget: forget a message by hash
         <hash>   -   ada will forget the message associated with the hash
@@ -39,7 +39,7 @@ OPTIONS
         <alias>/<file>/<dir> [regex]   -   show all content that are greped by
             regex, if regex is not given, show all
     amend: amend an existing entry
-        <hash> <new_content>
+        <hash> [<new_content>]
     append: append to an existing entry
         <hash> <content_to_append>
 
