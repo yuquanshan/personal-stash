@@ -182,7 +182,8 @@ class LineFixedTxtEditor:
         self.dump_backup_ = False
         # cursor pos
         self.yx_ = self.lines_manager.to_corrected_yx()
-        self.yx_[0] = self.yx_[0] + BORDER_LINES
+        self.border_lines_ = BORDER_LINES
+        self.yx_[0] = self.yx_[0] + self.border_lines_
 
 
     def _render_state(self, window):
@@ -199,7 +200,7 @@ class LineFixedTxtEditor:
 
     def _render_content(self, window):
         yx = curses.getsyx()
-        window.addstr(BORDER_LINES, 0, self.lines_manager.to_formatted())
+        window.addstr(self.border_lines_, 0, self.lines_manager.to_formatted())
 
 
     def _render(self, window):
@@ -214,7 +215,7 @@ class LineFixedTxtEditor:
         elif c == ord(':'):
             self.state_ = 1
             self.cmd_buff_ = ":"
-            self.yx_ = [BORDER_LINES - 1, len(self.cmd_buff_)]
+            self.yx_ = [self.border_lines_ - 1, len(self.cmd_buff_)]
         elif c in MOVE_KEYS:
             self._move_cursor(c)
 
@@ -223,7 +224,7 @@ class LineFixedTxtEditor:
         c = window.getch()
         if c >= 97 and c <= 122:
             self.cmd_buff_ = self.cmd_buff_ + chr(c)
-            self.yx_ = [BORDER_LINES - 1, len(self.cmd_buff_)]
+            self.yx_ = [self.border_lines_ - 1, len(self.cmd_buff_)]
         elif c == 10: # ENTER
             if self.cmd_buff_ == ":wq":
                 self.stay_editing_ = False
@@ -232,7 +233,7 @@ class LineFixedTxtEditor:
                 window.clear()
                 self._reset_state()
                 yx = self.lines_manager.to_corrected_yx()
-                yx[0] = yx[0] + BORDER_LINES
+                yx[0] = yx[0] + self.border_lines_
                 self.yx_ = yx
             elif self.cmd_buff_ == ":q":
                 self.stay_editing_ = False
@@ -244,11 +245,14 @@ class LineFixedTxtEditor:
         elif c == 127:
             window.clear()
             self.cmd_buff_ = self.cmd_buff_[:-1]
-            self.yx_ = [BORDER_LINES - 1, len(self.cmd_buff_)]
+            self.yx_ = [self.border_lines_ - 1, len(self.cmd_buff_)]
 
 
-    def _take_and_process_insert(self, window):
-        c = window.getch()
+    def _take_and_process_insert(self, window, ch = None):
+        if not ch:
+            c = window.getch()
+        else:
+            c = ch
         if c == 27: # ESC
             window.clear()
             self._reset_state()
@@ -258,13 +262,13 @@ class LineFixedTxtEditor:
             # we delete char with idx lc[1] - 1 of the line
             self.lines_manager.delete()
             yx = self.lines_manager.to_corrected_yx()
-            yx[0] = yx[0] + BORDER_LINES
+            yx[0] = yx[0] + self.border_lines_
             self.yx_ = yx
             window.clear()
         elif c >= 32 and c <= 126:
             self.lines_manager.insert(chr(c))
             yx = self.lines_manager.to_corrected_yx()
-            yx[0] = yx[0] + BORDER_LINES
+            yx[0] = yx[0] + self.border_lines_
             self.yx_ = yx
             window.clear()
 
@@ -280,22 +284,22 @@ class LineFixedTxtEditor:
         if move == MOVE_KEYS[0]:
             self.lines_manager.move_up()
             yx = self.lines_manager.to_corrected_yx()
-            yx[0] = yx[0] + BORDER_LINES
+            yx[0] = yx[0] + self.border_lines_
             self.yx_ = yx
         elif move == MOVE_KEYS[1]:
             self.lines_manager.move_down()
             yx = self.lines_manager.to_corrected_yx()
-            yx[0] = yx[0] + BORDER_LINES
+            yx[0] = yx[0] + self.border_lines_
             self.yx_ = yx
         elif move == MOVE_KEYS[2]:
             self.lines_manager.move_left()
             yx = self.lines_manager.to_corrected_yx()
-            yx[0] = yx[0] + BORDER_LINES
+            yx[0] = yx[0] + self.border_lines_
             self.yx_ = yx
         elif move == MOVE_KEYS[3]:
             self.lines_manager.move_right()
             yx = self.lines_manager.to_corrected_yx()
-            yx[0] = yx[0] + BORDER_LINES
+            yx[0] = yx[0] + self.border_lines_
             self.yx_ = yx
 
 
@@ -321,3 +325,24 @@ class LineFixedTxtEditor:
         if not self.dump_backup_:
             return self.lines_manager.yeild_contents()
         return [self.content_, self.ineditable_content_]
+
+
+class InteractivePrompt(LineFixedTxtEditor):
+    def __init__(self, width, msg):
+        LineFixedTxtEditor.__init__(self, width, [''], [msg])
+        self.border_lines_ = 0
+        self.state_ = 2
+        self.yx_ = [0, len(msg)]
+
+    def _render_state(self, window):
+        pass
+
+    def _reset_state(self):
+        pass
+
+    def _take_and_process_insert(self, window, ch = None):
+        c = window.getch()
+        if c == 10: # ENTER
+            self.stay_editing_ = False
+        else:
+            LineFixedTxtEditor._take_and_process_insert(self, window, c)

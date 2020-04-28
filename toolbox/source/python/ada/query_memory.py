@@ -8,7 +8,7 @@ import os
 import re
 import sets
 import time
-from txt_editor import LineFixedTxtEditor
+from txt_editor import LineFixedTxtEditor, InteractivePrompt
 
 '''
 let ada remember either a file, a string and peek the remembered content
@@ -33,6 +33,8 @@ N_MORE_LINES_TO_PRINT = 10
 DEFAULT_TTL = 15
 DAY_SECONDS = 3600 * 24
 
+EDITOR_WIDTH = 100
+
 CONFIG_PATH = os.path.expanduser('~/.adaconfig/.config')
 MEMORY_PATH = os.path.expanduser('~/.adaconfig/.memory')
 
@@ -56,10 +58,23 @@ def process_memory(*args):
             peek(config, *args[idx + 1:])
         elif 'remember' in args:
             idx = args.index('remember')
-            if idx >= len(args) - 1:
-                print('remember what?')
-                return
-            if idx == len(args) - 2:
+            if idx == len(args) - 1:
+                ed1 = LineFixedTxtEditor(EDITOR_WIDTH, [''])
+                ctt = ed1.run()
+                txt = ctt[0][0]
+                ed2 = InteractivePrompt(EDITOR_WIDTH, "ttl (days): ")
+                ctt2 = ed2.run()
+                ttl_str = ctt2[0][0].replace(' ', '')
+                try:
+                    if len(ttl_str) > 0:
+                        ttl = int(ttl_str)
+                    else:
+                        ttl = DEFAULT_TTL
+                except Exception:
+                    print("unrecognized ttl string {}, using default ttl {}".format(ttl_str, DEFAULT_TTL))
+                    ttl = DEFAULT_TTL
+                remember(config, txt, ttl)
+            elif idx == len(args) - 2:
                 remember(config, args[idx + 1])
             else:
                 remember(config, args[idx + 1], int(args[-1]))
@@ -92,9 +107,20 @@ def process_memory(*args):
                 if ret[1] <= 0:
                     print("hash not found, update nothing")
                 else:
-                    editor = LineFixedTxtEditor(100, [ret[2]])
+                    editor = LineFixedTxtEditor(EDITOR_WIDTH, [ret[2]])
                     ctt = editor.run()
-                    remember(config, '\n'.join(ctt[0]), ret[1], ret[0])
+                    editor = InteractivePrompt(EDITOR_WIDTH, "new ttl (days): ")
+                    ctt2 = editor.run()
+                    ttl_str = ctt2[0][0].replace(' ', '')
+                    try:
+                        if len(ttl_str) > 0:
+                            ttl = int(ttl_str)
+                        else:
+                            ttl = ret[1]
+                    except Exception:
+                        print("unrecognized ttl string {}, using original ttl {}".format(ttl_str, ret[1]))
+                        ttl = ret[1]
+                    remember(config, '\n'.join(ctt[0]), ttl, ret[0])
             else:
                 hash = args[idx + 1]
                 new_content = ' '.join(args[idx + 2:])
