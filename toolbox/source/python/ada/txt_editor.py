@@ -159,6 +159,56 @@ class LinesManager:
         return [[l.get_content() for l in self.lines_], [l.get_ineditable_content() for l in self.lines_]]
 
 
+    def to_beginning(self):
+        if len(self.lines_) > 0:
+            self.cur_yx_ = [0, self.lines_[0].ineditable_content_len()]
+        else:
+            self.cur_yx_ = [0, 0]
+
+
+    def to_end(self):
+        if len(self.lines_) > 0:
+            self.cur_yx_ = [len(self.lines_) - 1, self.lines_[len(self.lines_) - 1].ineditable_content_len() + self.lines_[len(self.lines_) - 1].content_len()]
+        else:
+            self.cur_yx_ = [0, 0]
+
+
+    def find_forward(self, s):
+        if len(s) == 0 or len(self.lines_) == 0:
+            return False
+        else:
+            y,x = self.cur_yx_
+            flag = True
+            while flag or y != self.cur_yx_[0]:
+                flag = False
+                idx = self.lines_[y].get_content().find(s, x - self.lines_[y].ineditable_content_len())
+                if idx != -1:
+                    self.cur_yx_[0] = y
+                    self.cur_yx_[1] = self.lines_[y].ineditable_content_len() + idx
+                    return True
+                y = (y + 1) % len(self.lines_)
+                x = self.lines_[y].ineditable_content_len()
+            return False
+
+
+    def find_backward(self, s):
+        if len(s) == 0 or len(self.lines_) == 0:
+            return False
+        else:
+            y,x = self.cur_yx_
+            flag = True
+            while flag or y != self.cur_yx_[0]:
+                flag = False
+                idx = self.lines_[y].get_content().rfind(s, 0, x - self.lines_[y].ineditable_content_len())
+                if idx != -1:
+                    self.cur_yx_[0] = y
+                    self.cur_yx_[1] = self.lines_[y].ineditable_content_len() + idx
+                    return True
+                y = (y - 1) % len(self.lines_)
+                x = self.lines_[y].ineditable_content_len() + self.lines_[y].content_len()
+            return False
+
+
 # a simple vim like editor
 # Each line contains two parts: 1. non-editable content and editable content;
 # doesn't support line deletion
@@ -178,6 +228,7 @@ class LineFixedTxtEditor:
         ## 0 is view mode, 1 is cmd mode, 2 is insert mode
         self.state_ = 0
         self.cmd_buff_ = ""
+        self.hidden_cmd_buff_ = ""
         self.stay_editing_ = True
         self.dump_backup_ = False
         # cursor pos
@@ -210,7 +261,25 @@ class LineFixedTxtEditor:
 
     def _take_and_process_view(self, window):
         c = window.getch()
-        if c == ord('i'):
+        if c == ord('/'):
+            self.cmd_buff_ = "/"
+            self.cmd_hidden_cmd_buff_ = ""
+            self.state_ = 1
+            self.yx_ = [self.border_lines_ - 1, len(self.cmd_buff_)]
+        elif c == ord('n') and len(self.cmd_hidden_cmd_buff_) > 0:
+            self.lines_manager.move_right()
+            if self.lines_manager.find_forward(self.cmd_hidden_cmd_buff_):
+                yx = self.lines_manager.to_corrected_yx()
+                yx[0] = yx[0] + self.border_lines_
+                self.yx_ = yx
+            else:
+                self.lines_manager.move_left()
+        elif c == ord('N') and len(self.cmd_hidden_cmd_buff_) > 0:
+            if self.lines_manager.find_backward(self.cmd_hidden_cmd_buff_):
+                yx = self.lines_manager.to_corrected_yx()
+                yx[0] = yx[0] + self.border_lines_
+                self.yx_ = yx
+        elif c == ord('i'):
             self.state_ = 2
         elif c == ord(':'):
             self.state_ = 1
@@ -218,6 +287,24 @@ class LineFixedTxtEditor:
             self.yx_ = [self.border_lines_ - 1, len(self.cmd_buff_)]
         elif c in MOVE_KEYS:
             self._move_cursor(c)
+        elif c == ord('g'):
+            if self.hidden_cmd_buff_ == "g":
+                self.hidden_cmd_buff_ = ""
+                self.lines_manager.to_beginning()
+                yx = self.lines_manager.to_corrected_yx()
+                yx[0] = yx[0] + self.border_lines_
+                self.yx_ = yx
+            else:
+                self.hidden_cmd_buff_ = "g"
+        elif c == ord('G'):
+            if self.hidden_cmd_buff_ == "G":
+                self.hidden_cmd_buff_ = ""
+                self.lines_manager.to_end()
+                yx = self.lines_manager.to_corrected_yx()
+                yx[0] = yx[0] + self.border_lines_
+                self.yx_ = yx
+            else:
+                self.hidden_cmd_buff_ = "G"
 
 
     def _take_and_process_cmd(self, window):
@@ -229,7 +316,7 @@ class LineFixedTxtEditor:
             if self.cmd_buff_ == ":wq":
                 self.stay_editing_ = False
                 self.cmd_buff_ = ""
-            if self.cmd_buff_ == ":w":
+            elif self.cmd_buff_ == ":w":
                 window.clear()
                 self._reset_state()
                 yx = self.lines_manager.to_corrected_yx()
@@ -239,7 +326,18 @@ class LineFixedTxtEditor:
                 self.stay_editing_ = False
                 self.cmd_buff_ = ""
                 self.dump_backup_ = True
+            elif self.cmd_buff_[0] == '/':
+                self.cmd_hidden_cmd_buff_ = self.cmd_buff_[1:]
+                self.lines_manager.find_forward(self.cmd_hidden_cmd_buff_)
+                yx = self.lines_manager.to_corrected_yx()
+                yx[0] = yx[0] + self.border_lines_
+                self.yx_ = yx
+                window.clear()
+                self._reset_state()
         elif c == 27: # ESC
+            yx = self.lines_manager.to_corrected_yx()
+            yx[0] = yx[0] + self.border_lines_
+            self.yx_ = yx
             window.clear()
             self._reset_state()
         elif c == 127:
