@@ -178,9 +178,8 @@ class LinesManager:
             return False
         else:
             y,x = self.cur_yx_
-            flag = True
-            while flag or y != self.cur_yx_[0]:
-                flag = False
+            counter = 0
+            while counter <= len(self.lines_):
                 idx = self.lines_[y].get_content().find(s, x - self.lines_[y].ineditable_content_len())
                 if idx != -1:
                     self.cur_yx_[0] = y
@@ -188,6 +187,7 @@ class LinesManager:
                     return True
                 y = (y + 1) % len(self.lines_)
                 x = self.lines_[y].ineditable_content_len()
+                counter = counter + 1
             return False
 
 
@@ -196,9 +196,8 @@ class LinesManager:
             return False
         else:
             y,x = self.cur_yx_
-            flag = True
-            while flag or y != self.cur_yx_[0]:
-                flag = False
+            counter = 0
+            while counter <= len(self.lines_):
                 idx = self.lines_[y].get_content().rfind(s, 0, x - self.lines_[y].ineditable_content_len())
                 if idx != -1:
                     self.cur_yx_[0] = y
@@ -206,6 +205,7 @@ class LinesManager:
                     return True
                 y = (y - 1) % len(self.lines_)
                 x = self.lines_[y].ineditable_content_len() + self.lines_[y].content_len()
+                counter = counter + 1
             return False
 
 
