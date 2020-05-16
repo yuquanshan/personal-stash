@@ -33,7 +33,8 @@ N_MORE_LINES_TO_PRINT = 10
 DEFAULT_TTL = 15
 DAY_SECONDS = 3600 * 24
 
-EDITOR_WIDTH = 100
+_, col = os.popen('stty size', 'r').read().split()
+EDITOR_WIDTH = int(col) - 1
 
 CONFIG_PATH = os.path.expanduser('~/.adaconfig/.config')
 MEMORY_PATH = os.path.expanduser('~/.adaconfig/.memory')

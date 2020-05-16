@@ -1,6 +1,8 @@
 import copy
 import curses
 import curses.textpad
+import os
+from threading import Thread
 
 VIEW_STR = "[VIEW MODE]"
 CMD_STR = "[CMD MODE]"
@@ -215,8 +217,8 @@ class LinesManager:
 class LineFixedTxtEditor:
     def __init__(self, width, content, ineditable_content = None):
         assert width > 0
-        self.content_ = content
         self.width_ = width
+        self.content_ = content
         if len(self.content_) == 0:
             self.content_.append('')
         if not ineditable_content or len(content) == 0:
@@ -401,22 +403,31 @@ class LineFixedTxtEditor:
             self.yx_ = yx
 
 
+    def _refresh_and_wait_on_input(self, scr):
+        self._render(scr)
+        scr.move(*self.yx_)
+        if self.state_ == 0:
+            self._take_and_process_view(scr)
+        elif self.state_ == 1:
+            self._take_and_process_cmd(scr)
+        elif self.state_ == 2:
+            self._take_and_process_insert(scr)
+
+
+    def _refresh_window(self, scr):
+        self._render(scr)
+        scr.move(*self.yx_)
+        scr.refresh()
+
+
     def run(self):
         self._reset_state()
         scr = curses.initscr()
         curses.noecho()
         scr.keypad(True)
         scr.clearok(True)
-        self._render(scr)
         while self.stay_editing_:
-            scr.move(*self.yx_)
-            if self.state_ == 0:
-                self._take_and_process_view(scr)
-            elif self.state_ == 1:
-                self._take_and_process_cmd(scr)
-            elif self.state_ == 2:
-                self._take_and_process_insert(scr)
-            self._render(scr)
+            self._refresh_and_wait_on_input(scr)
         scr.clear()
         curses.endwin()
         self._reset_state()
