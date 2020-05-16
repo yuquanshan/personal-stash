@@ -309,7 +309,7 @@ class LineFixedTxtEditor:
 
     def _take_and_process_cmd(self, window):
         c = window.getch()
-        if c >= 97 and c <= 122:
+        if c >= 32 and c <= 126:
             self.cmd_buff_ = self.cmd_buff_ + chr(c)
             self.yx_ = [self.border_lines_ - 1, len(self.cmd_buff_)]
         elif c == 10: # ENTER
