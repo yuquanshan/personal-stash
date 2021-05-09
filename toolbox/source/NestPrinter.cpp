@@ -217,13 +217,11 @@ int main(int argc, char** argv) {
     std::cout << "Need argument." << std::endl;
     return 1;
   }
+  gflags::SetUsageMessage(
+      "Print nested lists as a forest (with multiple trees).\n"
+      "Usage: ./nest_breaker <input_string>");
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   auto inputStr = std::string(argv[argc - 1]);
-  if (inputStr == "--help") {
-    std::cout << "Print nested lists as a forest (with multiple trees)."
-              << std::endl;
-    std::cout << "Usage: ./nest_breaker <input_string>" << std::endl;
-    return 0;
-  }
   auto forest = parseForest(inputStr);
   auto parents = std::deque<std::shared_ptr<TreeNode<std::string>>>(0);
   auto joints =  std::deque<std::string>(0);
