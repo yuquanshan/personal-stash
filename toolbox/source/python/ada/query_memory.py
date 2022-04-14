@@ -6,9 +6,8 @@ import hashlib
 import json
 import os
 import re
-import sets
 import time
-from txt_editor import LineFixedTxtEditor, InteractivePrompt
+from ada.txt_editor import LineFixedTxtEditor, InteractivePrompt
 
 '''
 let ada remember either a file, a string and peek the remembered content
@@ -166,22 +165,19 @@ def peek(config, *args):
         if os.path.exists(config['_memory']):
             with open(config['_memory'], 'r') as fp:
                 entries = json.load(fp)
-            MEMFORMAT = unicode(GREEN_CODE + "[{} {}] " + RESET_CODE + "{} " + RED_CODE + "(expires in {} hrs)" + RESET_CODE)
+            MEMFORMAT = (GREEN_CODE + "[{} {}] " + RESET_CODE + "{} " + RED_CODE + "(expires in {} hrs)" + RESET_CODE)
             for entry in entries:
-                if isinstance(entry, unicode):
-                    print(MEMFORMAT.format("UNKNOWN", "UNKNOWN", entry, "UNKNOWN"))
-                else:
-                    ts = time.localtime(entry[0])
-                    time_str = "{}-{}-{} {}:{}:{}".format(
-                        ts.tm_year,
-                        str(ts.tm_mon).rjust(2, '0'),
-                        str(ts.tm_mday).rjust(2, '0'),
-                        str(ts.tm_hour).rjust(2, '0'),
-                        str(ts.tm_min).rjust(2, '0'),
-                        str(ts.tm_sec).rjust(2, '0'))
-                    now = calendar.timegm(time.gmtime())
-                    if entry[3] * DAY_SECONDS - (now - entry[0]) > 0:
-                        print(MEMFORMAT.format(time_str, entry[2], transformBulletsView(entry[1]), "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
+                ts = time.localtime(entry[0])
+                time_str = "{}-{}-{} {}:{}:{}".format(
+                    ts.tm_year,
+                    str(ts.tm_mon).rjust(2, '0'),
+                    str(ts.tm_mday).rjust(2, '0'),
+                    str(ts.tm_hour).rjust(2, '0'),
+                    str(ts.tm_min).rjust(2, '0'),
+                    str(ts.tm_sec).rjust(2, '0'))
+                now = calendar.timegm(time.gmtime())
+                if entry[3] * DAY_SECONDS - (now - entry[0]) > 0:
+                    print(MEMFORMAT.format(time_str, entry[2], transformBulletsView(entry[1]), "{:.2f}".format((entry[3] * DAY_SECONDS - (now - entry[0])) / 3600.0)))
     # case 2 or 3
     # TODO(yuquanshan): refactor code to two functions: _process_file and _process_dir
     elif args[0] in config or os.path.exists(os.path.expanduser(args[0])):
@@ -243,10 +239,7 @@ def peek(config, *args):
             entries = json.load(fp)
         lines = []
         for entry in entries:
-            if isinstance(entry, unicode):
-                lines.append(entry + '\n')
-            else:
-                lines.append(entry[1] + '\n')
+            lines.append(entry[1] + '\n')
         print_match(lines, pattern)
 
 
@@ -260,33 +253,19 @@ def remember(config, s, ttl = DEFAULT_TTL, ts = None):
     if not ts:
         ts = calendar.timegm(time.gmtime())
     buffered_entries = []
-    hash = hashlib.sha224(s).hexdigest()[:6]
-    hash_set = sets.Set()
+    hash = hashlib.sha224(s.encode()).hexdigest()[:6]
+    hash_set = set()
     for entry in entries:
-        '''
-        backward compatibility: the original entries just a list of unicodes
-        but in the newest design, i want to make it a list of [ts, str,
-        hash(str), ttl (days)] tuples. so if the old format is detected,
-        replace it with the new format with default values filled
-        '''
-        if isinstance(entry, unicode):
-            h = hashlib.sha224(entry).hexdigest()[:6]
-            hash_set.add(h)
+        tdelta = ts - entry[0]
+        if tdelta > entry[3] * DAY_SECONDS:
+            # ttl passed, forget this entry
+            continue
+        else:
+            hash_set.add(entry[2])
             if hash in hash_set:
                 print("WARNING: hash collides with an exising content, replace it with the new one")
                 continue
-            buffered_entries.append([ts, entry, h, DEFAULT_TTL])
-        else:
-            tdelta = ts - entry[0]
-            if tdelta > entry[3] * DAY_SECONDS:
-                # ttl passed, forget this entry
-                continue
-            else:
-                hash_set.add(entry[2])
-                if hash in hash_set:
-                    print("WARNING: hash collides with an exising content, replace it with the new one")
-                    continue
-                buffered_entries.append(entry)
+            buffered_entries.append(entry)
     buffered_entries.append([ts, s, hash, ttl])
     with open(config['_memory'], 'w') as f:
         json.dump(buffered_entries, f)
@@ -305,12 +284,6 @@ def forget(config, hash):
     buffered_entries = []
     for entry in entries:
         ety = entry
-        if isinstance(entry, unicode):
-            now = calendar.timegm(time.gmtime())
-            h = hashlib.sha224(entry).hexdigest()[:6]
-            ety = [now, entry, h, DEFAULT_TTL]
-        else:
-            ety = entry
         if ety[2] == hash:
             # if hash matches, forget by not adding to buffered_entries
             ret = [ety[0], ety[-1], ety[1]]

@@ -30,14 +30,14 @@ class Line:
 
     def get_breaks(self):
         if len(self.content_) == 0 or len(self.content_) % self.width_ > 0:
-            return len(self.content_) / self.width_ + 1
+            return len(self.content_) // self.width_ + 1
         else:
-            return len(self.content_) / self.width_
+            return len(self.content_) // self.width_
 
 
     def get_corrected_yx(self, i):
         if self.width_ > 0:
-            return [i / self.width_, i % self.width_]
+            return [i // self.width_, i % self.width_]
         else:
             return [0, 0]
 

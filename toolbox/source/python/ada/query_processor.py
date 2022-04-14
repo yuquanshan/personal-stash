@@ -1,7 +1,7 @@
-import query_calc
-import query_memory
-import query_show
-import query_time
+from ada import query_calc
+from ada import query_memory
+from ada import query_show
+from ada import query_time
 
 def process_query(args):
     if 'calc' in args:

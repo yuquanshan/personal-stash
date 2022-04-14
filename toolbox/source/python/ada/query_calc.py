@@ -8,5 +8,5 @@ def eval_expr(*args):
             expr = ' '.join(args)
             return eval(expr)
         except SyntaxError:
-            print "Illegal expression: " + expr
+            print("Illegal expression: " + expr)
             sys.exit(1)

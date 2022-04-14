@@ -13,7 +13,7 @@ class DontGetDateHint(Exception):
 
 def process_time_query(*args):
     if len(args) == 0:
-        print "No time specified"
+        print("No time specified")
     m = re.search(DATE_FORMAT, args[-1])
     args = [x.lower() for x in args]
     try:
