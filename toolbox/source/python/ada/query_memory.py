@@ -206,7 +206,7 @@ def peek(config, *args):
                 print("ERROR:" + str(args[0]) + "is neither a registered alias nor a valid path to a file or dir")
         # case 3
         else:
-            pattern = u".*{}.*".format(args[1].decode('utf8')).lower()
+            pattern = u".*{}.*".format(args[1]).lower()
             print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
             if args[0] in config:
                 with open(config[args[0]], 'r') as fp:
@@ -234,7 +234,7 @@ def peek(config, *args):
     # case 4
     else:
         with open(config['_memory'], 'r') as fp:
-            pattern = u".*{}.*".format(args[0].decode('utf8')).lower()
+            pattern = u".*{}.*".format(args[0]).lower()
             print(RED_CODE + u"SEARCH PATTERN (case insensitive): " + pattern + RESET_CODE)
             entries = json.load(fp)
         lines = []
@@ -308,7 +308,7 @@ def print_match(lines, pattern):
     line_count = 0
     for l in lines:
         line_count = line_count + 1
-        l = l.decode('utf8')
+        l = l
         match = re.match(pattern, l.lower())
         if match:
             match_in_buffer = True
