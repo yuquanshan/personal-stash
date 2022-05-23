@@ -8,6 +8,8 @@ import os
 import re
 import time
 from ada.txt_editor import LineFixedTxtEditor, InteractivePrompt
+from getpass import getpass
+from Crypto.Cipher import Blowfish
 
 '''
 let ada remember either a file, a string and peek the remembered content
@@ -37,6 +39,8 @@ EDITOR_WIDTH = int(col) - 1
 
 CONFIG_PATH = os.path.expanduser('~/.adaconfig/.config')
 MEMORY_PATH = os.path.expanduser('~/.adaconfig/.memory')
+PWD_BLOCK_SIZE = 8
+PWD_HEADING = "pwdbook:"
 
 def process_memory(*args):
     try:
@@ -142,6 +146,12 @@ def process_memory(*args):
                     print("hash not found, append to nothing")
                 else:
                     remember(config, ret[-1] + new_content, ret[1], ret[0])
+        elif 'pwd' in args:
+            idx = args.index('pwd')
+            if len(args[idx+1:]) == 0:
+                print('no action under pwd')
+            else:
+                pwd(config, *args[idx+1:])
         else:
             print("I don't understand the input" + ' '.join(args))
             return
@@ -299,6 +309,57 @@ def register(config, alias, fp):
     if not os.path.exists(os.path.expanduser(fp)):
         raise Exception("File " + fp + " doesn't exist")
     config[alias] = fp
+
+
+def pwd(config, action, *args):
+    pwd = getpass('Enter you password: ')
+    crypt = Blowfish.new(pwd)
+    # schema: pwdbook:{name: [uname, pwd, comment]...}
+    pwd_list = {}
+    if '_pwd' not in config:
+        print("please register _pwd first")
+    if os.path.exists(config['_pwd']):
+        with open(config['_pwd'], 'rb') as f:
+            txt = f.read()
+            if len(txt) >= PWD_BLOCK_SIZE:
+                txt = crypt.decrypt(txt).decode('ASCII')
+                if PWD_HEADING not in txt:
+                    raise Exception('Wrong password: ' + pwd)
+                txt = txt.replace(PWD_HEADING, '', 1).strip()
+                pwd_list = json.loads(txt)
+    if action == 'search':
+        if len(args) == 0:
+            print('nothing to peek')
+            return
+        kw = args[0]
+        found = False
+        for i in pwd_list.items():
+            if kw in i[0].lower():
+                found = True
+                print("{}: {}".format(i[0], i[1]))
+        if not found:
+            print(kw + ' not found')
+    elif action == 'update':
+        if len(args) < 3:
+            print('please at least specify name, uname, and pwd')
+            return
+        name = args[0]
+        ctnt = args[1:]
+        pwd_list[name] = ctnt
+    elif action == 'delete':
+        if len(args) == 0:
+            print('nothing to delete')
+            return
+        if args[0] not in pwd_list:
+            print('cannot find ' + args[0])
+            return
+        del pwd_list[args[0]]
+    txt = json.dumps(pwd_list)
+    txt = str(PWD_HEADING)+txt
+    txt = txt.ljust((len(txt) // PWD_BLOCK_SIZE  + 1) * PWD_BLOCK_SIZE)
+    etxt = crypt.encrypt(txt)
+    with open(config['_pwd'], 'wb') as f:
+        f.write(etxt)
 
 
 def print_match(lines, pattern):

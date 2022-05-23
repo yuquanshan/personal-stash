@@ -1,8 +1,7 @@
-ada - a personalized cmdline assistant for yuquanshan
+ada - a personalized cmd line assistant for yuquanshan
 
-install ada only:
+https://pypi.org/project/ada-assistant/
 
 '''
-python3 setup.py install --user --install-scripts /usr/local/bin
+pip install ada-assistant
 '''
-
